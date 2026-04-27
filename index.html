@@ -7,18 +7,16 @@
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet"/>
 
-  <script src="https://flex.cybersource.com/cybersource-unified-checkout.min.js"></script>
-
   <style>
     :root { --bg: #0d0f14; --surface: #161a23; --accent: #4f8ef7; --text: #e8ecf4; --border: #2a3040; }
     body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
     .card { background: var(--surface); border: 1px solid var(--border); padding: 32px; border-radius: 16px; width: 100%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-    h2 { margin-top: 0; font-size: 1.5rem; }
+    h2 { margin-top: 0; font-size: 1.5rem; text-align: center; }
     .form-group { margin-bottom: 15px; }
     label { display: block; font-size: 0.8rem; color: #7a8499; margin-bottom: 5px; }
-    input { width: 100%; padding: 12px; background: #1e2330; border: 1px solid var(--border); border-radius: 8px; color: white; outline: none; }
-    #payment-form { margin: 20px 0; min-height: 50px; }
-    #pay-btn { width: 100%; padding: 16px; background: var(--accent); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
+    input { width: 100%; padding: 12px; background: #1e2330; border: 1px solid var(--border); border-radius: 8px; color: white; outline: none; box-sizing: border-box; }
+    #payment-form { margin: 20px 0; min-height: 50px; text-align: center; font-size: 0.9rem; }
+    #pay-btn { width: 100%; padding: 16px; background: var(--accent); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
     #pay-btn:disabled { opacity: 0.5; cursor: not-allowed; }
   </style>
 </head>
@@ -28,22 +26,27 @@
     <h2>Complete Payment</h2>
     <div class="form-group">
       <label>Full Name</label>
-      <input type="text" id="full-name" placeholder="Zaid Khanfar">
+      <input type="text" id="full-name" value="Zaid Khanfar">
     </div>
     <div class="form-group">
       <label>Email Address</label>
-      <input type="email" id="email" placeholder="z.khanfar@bankaletihad.com">
+      <input type="email" id="email" value="z.khanfar@bankaletihad.com">
     </div>
     <div class="form-group">
       <label>Phone Number</label>
-      <input type="tel" id="phone" placeholder="0790374009">
+      <input type="tel" id="phone" value="0790374009">
     </div>
 
-    <div id="payment-form"></div>
+    <div id="payment-form">Loading secure fields...</div>
 
     <button id="pay-btn" onclick="handlePayment()">Pay JOD 0.10</button>
   </div>
 
+  <script 
+    src="https://flex.cybersource.com/cybersource-unified-checkout.min.js"
+    onerror="alert('CRITICAL: The Bank Security Script was blocked by your browser or network! Please disable ad-blockers.')">
+  </script>
+  
   <script src="app.js"></script>
 </body>
 </html>
