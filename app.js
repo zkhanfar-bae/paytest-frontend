@@ -1,67 +1,60 @@
-const BACKEND_URL = 'https://bae-back-end.onrender.com'; 
+const BACKEND_URL = 'https://bae-back-end.onrender.com';
 let unifiedPayments = null;
 
-// This function FORCES the script to load into the page
-function loadBankScript() {
-  return new Promise((resolve, reject) => {
-    const script = document.createElement('script');
-    script.src = "https://flex.cybersource.com/cybersource-unified-checkout.min.js";
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error("Bank Script Blocked by Network/Browser"));
-    document.head.appendChild(script);
-  });
-}
+async function start() {
+    const status = document.getElementById('payment-form');
+    const errDisplay = document.getElementById('error-display');
 
-async function initCardForm() {
-  const mountEl = document.getElementById('payment-form');
-  mountEl.innerHTML = 'Establishing secure connection...';
+    try {
+        // 1. Check if the bank script loaded
+        if (typeof Accept === 'undefined') {
+            throw new Error("Bank security script blocked. Try Incognito mode or a different network.");
+        }
 
-  try {
-    // 1. Force the script to load
-    await loadBankScript();
+        // 2. Get the session from your backend
+        const res = await fetch(`${BACKEND_URL}/api/capture-context`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                amount: "0.10",
+                currency: "JOD",
+                targetOrigin: window.location.origin
+            })
+        });
 
-    // 2. Ask the backend for the context
-    const res = await fetch(`${BACKEND_URL}/api/capture-context`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        amount: "0.10",
-        currency: "JOD",
-        targetOrigin: window.location.origin,
-      }),
-    });
+        const data = await res.json();
+        
+        // If your backend sent the 401 error, show it clearly
+        if (!res.ok) throw new Error(data.error || `Server error: ${res.status}`);
 
-    const data = await res.json();
-    if (!res.ok) throw new Error("Backend Error: " + (data.error || res.status));
+        const captureContext = data.captureContext || data.token || data;
 
-    const captureContext = data.captureContext || data.token || data;
-    
-    // 3. Start the UI
-    const accept = await Accept(captureContext);
-    unifiedPayments = await accept.unifiedPayments();
-    
-    await unifiedPayments.show({ containers: { paymentSelection: '#payment-form' } });
-    mountEl.innerHTML = ''; 
+        // 3. Mount the card form
+        const accept = await Accept(captureContext);
+        unifiedPayments = await accept.unifiedPayments();
+        await unifiedPayments.show({ containers: { paymentSelection: '#payment-form' } });
+        status.style.border = 'none';
 
-  } catch (err) {
-    console.error('System Error:', err);
-    mountEl.innerHTML = `<span style="color:#ef4444;font-size:0.8rem">⚠️ ${err.message}</span>`;
-  }
+    } catch (err) {
+        console.error(err);
+        status.innerText = "❌ Session Failed";
+        errDisplay.innerText = err.message;
+    }
 }
 
 async function handlePayment() {
-  try {
-    const transientToken = await unifiedPayments.complete();
-    const res = await fetch(`${BACKEND_URL}/api/finalize-payment`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ transientToken }),
-    });
-    const result = await res.json();
-    alert(result.status === 'COMPLETED' ? '✅ Success' : '❌ Declined');
-  } catch (err) {
-    alert('Error: ' + err.message);
-  }
+    try {
+        const transientToken = await unifiedPayments.complete();
+        const res = await fetch(`${BACKEND_URL}/api/finalize-payment`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ transientToken })
+        });
+        const result = await res.json();
+        alert(result.status === 'COMPLETED' ? "✅ Payment Success!" : "❌ Payment Failed");
+    } catch (err) {
+        alert("Payment Error: " + err.message);
+    }
 }
 
-window.addEventListener('load', initCardForm);
+window.onload = start;
