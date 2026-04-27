@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PayTest — Gateway Demo</title>
+  <script src="https://flex.cybersource.com/cybersource-unified-checkout.min.js"></script>
+  <style>
+    /* Basic styling to make it look professional */
+    body { font-family: sans-serif; background: #0d0f14; color: #fff; padding: 40px; }
+    .card { background: #161a23; padding: 20px; border-radius: 12px; max-width: 400px; margin: auto; }
+    input { width: 100%; padding: 10px; margin: 10px 0; border-radius: 4px; border: none; }
+    button { width: 100%; padding: 15px; background: #4f8ef7; color: white; border: none; border-radius: 8px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Complete Payment</h2>
+    <input type="text" id="full-name" placeholder="Full Name">
+    <input type="email" id="email" placeholder="Email">
+    <input type="tel" id="phone" placeholder="Phone Number">
+    <div id="payment-form"></div>
+    <button id="pay-btn" onclick="handlePayment()">Pay JOD 0.10</button>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
