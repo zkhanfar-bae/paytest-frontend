@@ -1,80 +1,67 @@
-// 1. BE SURE to keep your real backend URL here!
 const BACKEND_URL = 'https://bae-back-end.onrender.com'; 
-const ORDER_CURRENCY = 'JOD';
-let ORDER_AMOUNT = 0.10;
 let unifiedPayments = null;
 
-// This function waits until the bank's "Accept" tool is actually ready
-async function waitForAccept(timeout = 5000) {
-  const start = Date.now();
-  while (typeof Accept === 'undefined') {
-    if (Date.now() - start > timeout) throw new Error("Bank SDK failed to load. Check your internet or ad-blocker.");
-    await new Promise(resolve => setTimeout(resolve, 100));
-  }
+// This function FORCES the script to load into the page
+function loadBankScript() {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = "https://flex.cybersource.com/cybersource-unified-checkout.min.js";
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error("Bank Script Blocked by Network/Browser"));
+    document.head.appendChild(script);
+  });
 }
 
 async function initCardForm() {
   const mountEl = document.getElementById('payment-form');
-  mountEl.innerHTML = 'Loading secure fields...';
+  mountEl.innerHTML = 'Establishing secure connection...';
 
   try {
-    // Wait for the script to actually exist in the browser memory
-    await waitForAccept();
+    // 1. Force the script to load
+    await loadBankScript();
 
+    // 2. Ask the backend for the context
     const res = await fetch(`${BACKEND_URL}/api/capture-context`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        amount: ORDER_AMOUNT.toFixed(2),
-        currency: ORDER_CURRENCY,
+        amount: "0.10",
+        currency: "JOD",
         targetOrigin: window.location.origin,
       }),
     });
 
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Backend error');
+    if (!res.ok) throw new Error("Backend Error: " + (data.error || res.status));
 
     const captureContext = data.captureContext || data.token || data;
     
-    // Now that we know 'Accept' exists, we call it
+    // 3. Start the UI
     const accept = await Accept(captureContext);
     unifiedPayments = await accept.unifiedPayments();
     
-    await unifiedPayments.show({ 
-      containers: { paymentSelection: '#payment-form' } 
-    });
-    
-    mountEl.innerHTML = ''; // Clear the loading text
+    await unifiedPayments.show({ containers: { paymentSelection: '#payment-form' } });
+    mountEl.innerHTML = ''; 
+
   } catch (err) {
-    console.error('Frontend Error:', err);
-    mountEl.innerHTML = `<span style="color:red">⚠️ ${err.message}</span>`;
+    console.error('System Error:', err);
+    mountEl.innerHTML = `<span style="color:#ef4444;font-size:0.8rem">⚠️ ${err.message}</span>`;
   }
 }
 
 async function handlePayment() {
-  const btn = document.getElementById('pay-btn');
-  btn.disabled = true;
-  btn.innerText = 'Processing...';
-
   try {
-    if (!unifiedPayments) throw new Error("Payment form not ready.");
-    
     const transientToken = await unifiedPayments.complete();
-    
     const res = await fetch(`${BACKEND_URL}/api/finalize-payment`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ transientToken }),
     });
-    
     const result = await res.json();
-    alert(result.status === 'COMPLETED' ? '✅ Payment Successful!' : '❌ Payment Declined');
+    alert(result.status === 'COMPLETED' ? '✅ Success' : '❌ Declined');
   } catch (err) {
-    alert('❌ Error: ' + err.message);
-  } finally {
-    btn.disabled = false;
-    btn.innerText = 'Pay JOD 0.10';
+    alert('Error: ' + err.message);
   }
 }
 
-window.addEventListener('DOMContentLoaded', initCardForm);
+window.addEventListener('load', initCardForm);
